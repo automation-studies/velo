@@ -12,3 +12,11 @@ export function generateOrderCode(prefix = 'VLO') {
   // Exemplo de uso
 const order = generateOrderCode();
 console.log(order); // ex: VLO-K9Q2A7
+
+
+import { Page } from '@playwright/test'
+
+export async function searchOrder(page: Page, orderNumber: string) {
+  await page.getByRole('textbox', { name: 'Código do Pedido' }).fill(orderNumber)
+  await page.getByRole('button', { name: 'Buscar Pedido' }).click()
+}
