@@ -25,5 +25,14 @@ export function createConfiguratorActions(page: Page) {
     async expectVehicleImageSrc(expectedSrc: string) {
       await expect(vehicleImage).toHaveAttribute('src', expectedSrc)
     },
+
+    async setOptional(checked: boolean, name: string | RegExp) {
+      await page.getByRole('checkbox', { name }).setChecked(checked)
+    },
+
+    async proceedToCheckout() {
+      await page.getByRole('button', { name: 'Monte o Seu' }).click()
+      await expect(page).toHaveURL(/\/order/)
+    },
   }
 }
