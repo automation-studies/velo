@@ -5,6 +5,7 @@ import { createOrderCheckoutActions } from './actions/orderCheckoutActions'
 import { createOrderLookupActions } from './actions/orderLookupActions'
 
 import { deleteOrderByEmail } from './database/orderRepository'
+import { mockCreditAnalysis } from './mock.api'
 
 type App = {
   configurator: ReturnType<typeof createConfiguratorActions>
@@ -12,6 +13,9 @@ type App = {
   orderLookup: ReturnType<typeof createOrderLookupActions>
   database: {
     deleteOrderByEmail: (email: string) => Promise<void>
+  }
+  mock: {
+    creditAnalysis: (score: number) => Promise<void>
   }
 }
 
@@ -23,6 +27,9 @@ export const test = base.extend<{ app: App }>({
       orderLookup: createOrderLookupActions(page),
       database: {
         deleteOrderByEmail,
+      },
+      mock: {
+        creditAnalysis: async (score: number) => await mockCreditAnalysis(page, score),
       },
     }
     await use(app)

@@ -9,13 +9,30 @@ export type Customer = {
   store: string
 }
 
+export type OrderStatus = 'Pedido Aprovado!' | 'Pedido em Análise!' | 'Pedido Reprovado!'
+
 export function createOrderCheckoutActions(page: Page) {
 
   const summaryTotalPrice = page.getByTestId('summary-total-price')
   const terms = page.getByTestId('checkout-terms')
   const submitButton = page.getByTestId('checkout-submit')
 
+  const alerts = {
+    name: page.getByTestId('error-name'),
+    surname: page.getByTestId('error-surname'),
+    email: page.getByTestId('error-email'),
+    phone: page.getByTestId('error-phone'),
+    cpf: page.getByTestId('error-cpf'),
+    store: page.getByTestId('error-store'),
+    terms: page.getByTestId('error-terms'),
+  }
+
   return {
+
+    elements: {
+      terms,
+      alerts,
+    },
 
     async expectLoaded() {
       await expect(page.getByRole('heading', { name: 'Finalizar Pedido' })).toBeVisible()
@@ -38,8 +55,12 @@ export function createOrderCheckoutActions(page: Page) {
       await page.getByRole('option', { name: storeName }).click()
     },
 
-    async selectPaymentMethodAvista() {
-      await page.getByTestId('payment-avista').click()
+    async selectPaymentMethod(method: string) {
+      await page.getByRole('button', { name: new RegExp(method, 'i') }).click()
+    },
+
+    async fillDownPayment(value: string) {
+      await page.getByTestId('input-entry-value').fill(value)
     },
 
     async acceptTerms() {
@@ -50,7 +71,7 @@ export function createOrderCheckoutActions(page: Page) {
       await submitButton.click()
     },
 
-    async expectResult(status: 'Pedido Aprovado!' | 'Crédito Reprovado') {
+    async expectResult(status: OrderStatus) {
       await expect(page).toHaveURL(/\/success/)
       await expect(page.getByTestId('success-status')).toHaveText(status)
     },
