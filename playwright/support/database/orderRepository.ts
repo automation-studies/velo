@@ -1,5 +1,8 @@
-import { db } from './database'
+import { supabaseAdmin } from './supabaseAdmin'
 
 export async function deleteOrderByEmail(email: string) {
-  await db.deleteFrom('orders').where('customer_email', '=', email).execute()
+  const { error } = await supabaseAdmin.from('orders').delete().eq('customer_email', email)
+  if (error) {
+    throw error
+  }
 }
