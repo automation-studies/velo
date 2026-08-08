@@ -1,0 +1,38 @@
+# Workflow de Integração Contínua focado em testes unitários.
+# Estrutura preparada para expansão futura (ex: lint, build, e2e, matrix).
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Faz o checkout do código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o Node.js na versão definida em NODE_VERSION
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Habilita o Corepack para disponibilizar o Yarn
+      - name: Enable Corepack
+        run: corepack enable
+
+      # 4. Instala as dependências do projeto usando o yarn.lock
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # 5. Executa os testes unitários com Vitest
+      - name: Run unit tests
+        run: yarn test
