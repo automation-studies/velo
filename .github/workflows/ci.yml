@@ -1,5 +1,6 @@
-# Workflow de Integração Contínua focado em testes unitários.
-# Estrutura preparada para expansão futura (ex: lint, build, e2e, matrix).
+# Workflow de Integração e Entrega Contínua.
+# Roda os testes unitários, builda e faz deploy de preview na Vercel,
+# executa os testes E2E contra o preview e promove para produção se tudo passar.
 name: Continuous Integration
 
 on:
@@ -9,6 +10,9 @@ on:
 
 env:
   NODE_VERSION: '24'
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   unit-tests:
@@ -36,3 +40,104 @@ jobs:
       # 5. Executa os testes unitários com Vitest
       - name: Run unit tests
         run: yarn test
+
+  build-and-deploy:
+    name: Build & Deploy Vercel Preview
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      # 1. Faz o checkout do código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o Node.js na versão definida em NODE_VERSION
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Habilita o Corepack para disponibilizar o Yarn
+      - name: Enable Corepack
+        run: corepack enable
+
+      # 4. Instala as dependências do projeto usando o yarn.lock
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # 5. Instala a Vercel CLI
+      - name: Install Vercel CLI
+        run: yarn global add vercel
+
+      # 6. Obtém as configurações do projeto na Vercel
+      - name: Pull Vercel config
+        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+
+      # 7. Builda o projeto no formato esperado pela Vercel
+      - name: Build project
+        run: vercel build --token=$VERCEL_TOKEN
+
+      # 8. Faz o deploy do build já pronto para o ambiente de preview
+      - name: Deploy to preview
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
+          echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
+
+  e2e-tests:
+    name: E2E Tests (Preview)
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Faz o checkout do código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o Node.js na versão definida em NODE_VERSION
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Habilita o Corepack para disponibilizar o Yarn
+      - name: Enable Corepack
+        run: corepack enable
+
+      # 4. Instala as dependências do projeto usando o yarn.lock
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # 5. Instala os browsers do Playwright
+      - name: Install Playwright Browsers
+        run: yarn playwright install --with-deps chromium
+
+      # 6. Executa os testes E2E contra o deploy de preview
+      - name: Run E2E tests
+        run: yarn playwright test
+        env:
+          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # 7. Publica o relatório do Playwright como artefato
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  promote:
+    name: Promote to Production
+    needs: [build-and-deploy, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Promove o deploy de preview já validado para produção
+      - name: Promote deployment
+        run: |
+          npx vercel@latest promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
+          --token=$VERCEL_TOKEN \
+          --yes

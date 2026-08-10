@@ -32,3 +32,11 @@ dist-ssr
 
 # Env (contains DB credentials)
 .env
+
+# Vercel
+.vercel
+
+# Claude
+.claude
+
+.env*

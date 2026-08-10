@@ -12,7 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  
+
   //Tempo máximo de espera para cada teste completo (30s é o padrão)
   timeout: 60000,
 
@@ -35,7 +35,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'retain-on-failure',
@@ -87,10 +87,12 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'yarn dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Run your local dev server before starting the tests, unless a remote BASE_URL is provided (e.g. Vercel preview) */
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: 'yarn dev',
+        url: 'http://localhost:5173',
+        reuseExistingServer: !process.env.CI,
+      },
 });
