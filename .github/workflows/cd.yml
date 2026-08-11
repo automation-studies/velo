@@ -1,7 +1,7 @@
-# Workflow de Integração e Entrega Contínua.
+# Workflow de Entrega Contínua.
 # Roda os testes unitários, builda e faz deploy de preview na Vercel,
 # executa os testes E2E contra o preview e promove para produção se tudo passar.
-name: Continuous Integration
+name: Continuous Deployment
 
 on:
   push:
@@ -13,6 +13,7 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_SCOPE: ${{ secrets.VERCEL_SCOPE }}
 
 jobs:
   unit-tests:
@@ -140,4 +141,5 @@ jobs:
         run: |
           npx vercel@latest promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
           --token=$VERCEL_TOKEN \
+          --scope=$VERCEL_SCOPE \
           --yes
