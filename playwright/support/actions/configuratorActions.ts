@@ -22,8 +22,8 @@ export function createConfiguratorActions(page: Page) {
       await expect(totalPrice).toHaveText(text)
     },
 
-    async expectVehicleImageSrc(expectedSrc: string) {
-      await expect(vehicleImage).toHaveAttribute('src', expectedSrc)
+    async expectVehicleImageSrc(expectedFileName: string) {
+      await expect(vehicleImage).toHaveAttribute('src', new RegExp(`${expectedFileName}(-[\\w-]+)?\\.png$`))
     },
 
     async setOptional(checked: boolean, name: string | RegExp) {

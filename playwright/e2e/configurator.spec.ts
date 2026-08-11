@@ -10,7 +10,7 @@ test.describe('Configuração do Veículo', () => {
     
     await app.configurator.selectColor('Midnight Black')
     await app.configurator.expectTotalPrice('R$ 40.000,00')
-    await app.configurator.expectVehicleImageSrc('/src/assets/midnight-black-aero-wheels.png')
+    await app.configurator.expectVehicleImageSrc('midnight-black-aero-wheels')
   })
 
   test('deve atualizar a imagem e o preço do veículo ao modificar as rodas', async ({ app }) => {
@@ -18,11 +18,11 @@ test.describe('Configuração do Veículo', () => {
 
     await app.configurator.selectWheels(/Sport Wheels/)
     await app.configurator.expectTotalPrice('R$ 42.000,00')
-    await app.configurator.expectVehicleImageSrc('/src/assets/glacier-blue-sport-wheels.png')
+    await app.configurator.expectVehicleImageSrc('glacier-blue-sport-wheels')
 
     await app.configurator.selectWheels(/Aero Wheels/)
     await app.configurator.expectTotalPrice('R$ 40.000,00')
-    await app.configurator.expectVehicleImageSrc('/src/assets/glacier-blue-aero-wheels.png')
+    await app.configurator.expectVehicleImageSrc('glacier-blue-aero-wheels')
   })
 
   test('deve atualizar o preço com opcionais e persistir o resumo ao ir para o checkout', async ({ app }) => {
