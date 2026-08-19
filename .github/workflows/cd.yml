@@ -79,10 +79,15 @@ jobs:
         run: npx --no-install vercel build --token=$VERCEL_TOKEN
 
       # 7. Faz o deploy do build já pronto para o ambiente de preview
+      #    (a CLI ignora --json quando roda sob CI=true e imprime texto para
+      #    humanos mesmo assim, então extrai a URL por padrão em vez de
+      #    depender do formato de saída)
       - name: Deploy to preview
         id: deploy
         run: |
-          URL=$(npx --no-install vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --json | jq -r '.url')
+          OUTPUT=$(npx --no-install vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --yes 2>&1)
+          echo "$OUTPUT"
+          URL=$(echo "$OUTPUT" | grep -Eo 'https://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1)
           echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
