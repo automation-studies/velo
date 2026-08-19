@@ -67,23 +67,22 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      # 5. Instala a Vercel CLI
-      - name: Install Vercel CLI
-        run: yarn global add vercel
-
-      # 6. Obtém as configurações do projeto na Vercel
+      # 5. Obtém as configurações do projeto na Vercel (usa a CLI já instalada
+      #    como devDependency via `npx --no-install`, pra evitar divergência
+      #    de versão/comportamento em relação a uma instalação global de
+      #    "latest" — e evitar o banner que `yarn <bin>` mistura no stdout)
       - name: Pull Vercel config
-        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+        run: npx --no-install vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
 
-      # 7. Builda o projeto no formato esperado pela Vercel
+      # 6. Builda o projeto no formato esperado pela Vercel
       - name: Build project
-        run: vercel build --token=$VERCEL_TOKEN
+        run: npx --no-install vercel build --token=$VERCEL_TOKEN
 
-      # 8. Faz o deploy do build já pronto para o ambiente de preview
+      # 7. Faz o deploy do build já pronto para o ambiente de preview
       - name: Deploy to preview
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --json | jq -r '.url')
+          URL=$(npx --no-install vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --json | jq -r '.url')
           echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
@@ -145,9 +144,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # 1. Promove o deploy de preview já validado para produção
+      #    (pinada na mesma versão da CLI usada no build/deploy, ver package.json)
       - name: Promote deployment
         run: |
-          npx vercel@latest promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
+          npx vercel@58.9.0 promote ${{ needs.build-and-deploy.outputs.deployment-url }} \
           --token=$VERCEL_TOKEN \
           --scope=$VERCEL_SCOPE \
           --yes
