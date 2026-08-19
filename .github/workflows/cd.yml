@@ -83,7 +83,7 @@ jobs:
       - name: Deploy to preview
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN)
+          URL=$(vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --json | jq -r '.url')
           echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
