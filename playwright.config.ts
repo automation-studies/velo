@@ -31,8 +31,8 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  /* HTML precisa ser gerado antes do JSON para a publicação no Test Dino funcionar corretamente. */
   reporter: [
+    ['@testdino/playwright', { token: process.env.TESTDINO_TOKEN }],
     ['html'],
     ['json', { outputFile: 'playwright-report/results.json' }],
   ],

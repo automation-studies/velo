@@ -117,6 +117,8 @@ jobs:
         run: yarn playwright install --with-deps chromium
 
       # 6. Executa os testes E2E contra o deploy de preview
+      #    (o reporter @testdino/playwright já publica os resultados em tempo
+      #    real durante a execução, sem precisar de um step de upload separado)
       - name: Run E2E tests
         run: yarn playwright test
         env:
@@ -124,6 +126,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TESTDINO_TOKEN: ${{ secrets.TESTDINO_TOKEN }}
 
       # 7. Publica o relatório do Playwright como artefato
       - name: Upload Playwright report
@@ -133,14 +136,6 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-
-      # 8. Publica o relatório no Test Dino (dashboard executivo)
-      - name: Upload report to Test Dino
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        run: npx tdpw upload playwright-report
-        env:
-          TESTDINO_TOKEN: ${{ secrets.TESTDINO_TOKEN }}
 
   promote:
     name: Promote to Production
