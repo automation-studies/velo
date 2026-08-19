@@ -42,43 +42,66 @@ Acesse: `http://localhost:5173`
 
 ## Configuração do Supabase
 
-### 1. Criar Projeto
+O projeto usa **dois** projetos Supabase separados:
+
+| Ambiente | Projeto | Usado por |
+|----------|---------|-----------|
+| Produção | `velo` | Deploy de Production na Vercel |
+| Preview | `velo-preview` | Deploys de Preview na Vercel + testes E2E do CI |
+
+Isso existe pra que os testes E2E (que rodam a cada push em `main`, antes do `promote` pra produção) nunca leiam nem escrevam dados no banco de produção.
+
+### 1. Criar os Projetos
 
 1. Acesse [supabase.com](https://supabase.com) e crie uma conta
-2. Clique em **New Project**
-3. Escolha um nome e senha para o banco
-4. Aguarde a criação (~2 minutos)
+2. Crie um projeto `New Project` para produção e outro para preview
+3. Aguarde a criação de cada um (~2 minutos)
 
 ### 2. Variáveis de Ambiente
 
-Crie o arquivo `.env` na raiz do projeto:
+Crie o arquivo `.env` na raiz do projeto com as credenciais dos dois projetos (encontradas em **Project Settings → API** e **Project Settings → Database** de cada um):
 
 ```env
-VITE_SUPABASE_PROJECT_ID="seu_project_id"
-VITE_SUPABASE_PUBLISHABLE_KEY="sua_chave_anon_publica"
-VITE_SUPABASE_URL="https://seu_project_id.supabase.co"
+# Produção
+VITE_SUPABASE_PROJECT_ID="seu_project_id_producao"
+VITE_SUPABASE_PUBLISHABLE_KEY="sua_chave_anon_publica_producao"
+VITE_SUPABASE_URL="https://seu_project_id_producao.supabase.co"
+DATABASE_URL=postgresql://postgres.seu_project_id_producao:senha@host.pooler.supabase.com:5432/postgres
+SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key_producao
+
+# Preview
+VITE_SUPABASE_PROJECT_ID_PREVIEW="seu_project_id_preview"
+VITE_SUPABASE_PUBLISHABLE_KEY_PREVIEW="sua_chave_anon_publica_preview"
+VITE_SUPABASE_URL_PREVIEW="https://seu_project_id_preview.supabase.co"
+DATABASE_URL_PREVIEW=postgresql://postgres.seu_project_id_preview:senha@host.pooler.supabase.com:5432/postgres
+SUPABASE_SERVICE_ROLE_KEY_PREVIEW=sua_service_role_key_preview
 ```
 
-> Encontre essas informações em: **Project Settings → API**
+`yarn dev` local sempre usa as variáveis de produção (`VITE_SUPABASE_URL`/`VITE_SUPABASE_PUBLISHABLE_KEY`) — as variantes `_PREVIEW` servem só pra rodar `supabase link`/`db push`/`functions deploy` contra o projeto de preview e pra configurar os GitHub Secrets do CI.
+
+> **Deploy na Vercel:** o app compilado (`src/integrations/supabase/client.ts`) não lê essas variáveis em produção — ele decide qual projeto usar em runtime, comparando o hostname que está servindo a página contra `PRODUCTION_HOSTNAMES`. Isso existe porque o pipeline de CD builda uma vez contra o preview e promove o mesmo artefato pra produção (`vercel promote`, sem rebuild); se o domínio de produção mudar, atualize a lista `PRODUCTION_HOSTNAMES` em `client.ts`.
 
 ### 3. Deploy (banco + functions)
+
+Rode os comandos abaixo uma vez pra cada projeto (troque o `--project-ref` e as flags `-PREVIEW`/produção conforme o caso):
 
 ```bash
 # Instalar CLI
 yarn add supabase -D
-
-# Login e vincular projeto
 yarn supabase login
-yarn supabase link --project-ref upeeugrbrpgpbaphdppq
 
-# Aplicar migrações (cria tabelas e RLS)
+# Produção
+yarn supabase link --project-ref seu_project_id_producao
 yarn supabase db push
+yarn supabase functions deploy credit-analysis
 
-# Deploy das Edge Functions
-yarn supabase functions deploy
+# Preview
+yarn supabase link --project-ref seu_project_id_preview
+yarn supabase db push
+yarn supabase functions deploy credit-analysis
 ```
 
-Pronto! O banco e as functions estarão configurados.
+Pronto! Banco e functions estarão configurados nos dois ambientes.
 
 ---
 
