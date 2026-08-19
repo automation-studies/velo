@@ -13,7 +13,6 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  VERCEL_SCOPE: ${{ secrets.VERCEL_SCOPE }}
 
 jobs:
   unit-tests:
@@ -81,17 +80,14 @@ jobs:
       # 7. Faz o deploy do build já pronto para o ambiente de preview
       #    (a CLI ignora --json quando roda sob CI=true e imprime texto para
       #    humanos mesmo assim, então extrai a URL por padrão em vez de
-      #    depender do formato de saída. A URL contém o VERCEL_SCOPE como
-      #    subdomínio, e como esse secret está cadastrado como Secret no
-      #    GitHub, qualquer output contendo essa substring é descartado
-      #    silenciosamente — por isso o valor vai em base64 pro job seguinte.)
+      #    depender do formato de saída)
       - name: Deploy to preview
         id: deploy
         run: |
           OUTPUT=$(npx --no-install vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --yes 2>&1)
           echo "$OUTPUT"
           URL=$(echo "$OUTPUT" | grep -Eo 'https://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1)
-          echo "deployment-url=$(echo -n "$URL" | base64 -w0)" >> "$GITHUB_OUTPUT"
+          echo "deployment-url=$URL" >> "$GITHUB_OUTPUT"
 
   e2e-tests:
     name: E2E Tests (Preview)
@@ -153,13 +149,14 @@ jobs:
     steps:
       # 1. Promove o deploy de preview já validado para produção
       #    (pinada na mesma versão da CLI usada no build/deploy, ver package.json.
-      #    A URL chega em base64, ver comentário no step "Deploy to preview".)
+      #    Sem --scope: VERCEL_ORG_ID + VERCEL_PROJECT_ID já bastam pra CLI
+      #    identificar o projeto, e --scope precisaria do slug da org, que
+      #    aparece na própria deployment-url e por isso não pode vir de um
+      #    GitHub Secret sem o output inteiro ser descartado pela mascara de segredos.)
       - name: Promote deployment
         env:
-          DEPLOYMENT_URL_B64: ${{ needs.build-and-deploy.outputs.deployment-url }}
+          DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment-url }}
         run: |
-          DEPLOYMENT_URL=$(echo "$DEPLOYMENT_URL_B64" | base64 -d)
           npx vercel@58.9.0 promote "$DEPLOYMENT_URL" \
           --token=$VERCEL_TOKEN \
-          --scope=$VERCEL_SCOPE \
           --yes
