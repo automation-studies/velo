@@ -33,6 +33,9 @@ dist-ssr
 # Env (contains DB credentials)
 .env
 
+# Never commit DB credentials here again
+docs/db-password.txt
+
 # Vercel
 .vercel
 
