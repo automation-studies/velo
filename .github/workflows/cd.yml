@@ -134,6 +134,7 @@ jobs:
       # 8. Publica o relatório no Test Dino (dashboard executivo)
       - name: Upload report to Test Dino
         if: ${{ !cancelled() }}
+        continue-on-error: true
         run: npx tdpw upload playwright-report
         env:
           TESTDINO_TOKEN: ${{ secrets.TESTDINO_TOKEN }}
