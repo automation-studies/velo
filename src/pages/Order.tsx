@@ -4,7 +4,7 @@ import InputMask from 'react-input-mask';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
-import { isValidCpf } from '@/lib/validators';
+import { isValidCpf, isValidEmailStrict } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,7 +62,7 @@ const stores = [
 const orderSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   surname: z.string().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Email inválido').refine(isValidEmailStrict, 'Email inválido'),
   phone: z.string().min(14, 'Telefone inválido'),
   cpf: z.string().refine(isValidCpf, 'CPF inválido'),
   store: z.string().min(1, 'Selecione uma loja'),

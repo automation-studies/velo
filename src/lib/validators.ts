@@ -18,3 +18,10 @@ export const isValidCpf = (value: string): boolean => {
   const d2 = calcDigit(cpf.slice(0, 10), 11);
   return cpf.endsWith(`${d1}${d2}`);
 };
+
+export const isValidEmailStrict = (value: string): boolean => {
+  const email = value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  if (email.includes('@.') || email.includes('..')) return false;
+  return true;
+};
